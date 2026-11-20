@@ -1,3 +1,32 @@
 node_modules/
 dist/
 .env
+.env.*
+!.env.example
+*.log
+
+# Credenciales, certificados privados y configuraciones locales
+.npmrc
+.netrc
+.pypirc
+.aws/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Archivos locales del editor y del sistema
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.local
+
+# Respaldos y volcados de datos
+*.bak
+*.backup
+*.sql
+*.dump
+coverage/

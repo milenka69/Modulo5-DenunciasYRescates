@@ -1,122 +1,86 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import InicioSesion from './components/InicioSesion.jsx'
+import PaginaInicio from './components/PaginaInicio.jsx'
+import EstructuraAplicacion from './components/EstructuraAplicacion.jsx'
+import { solicitarSesion, eliminarSesion } from './services/auth.js'
+
+const sessionKey = 'modulo5.sesion'
+
+function borrarSesionGuardada() {
+  for (const storage of [localStorage, sessionStorage]) {
+    try { storage.removeItem(sessionKey) } catch { /* Almacenamiento no disponible. */ }
+  }
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [session, setSession] = useState({})
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [errorField, setErrorField] = useState(null)
+  const [retry, setRetry] = useState(0)
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  async function cerrarSesion() {
+    try { await eliminarSesion() } catch (failure) { setError(failure.message); return }
+    borrarSesionGuardada()
+    setSession(null)
+    setUser(null)
+    setError('')
+  }
 
-      <div className="ticks"></div>
+  useEffect(() => {
+    if (!session) return
+    borrarSesionGuardada()
+    const controller = new AbortController()
+    solicitarSesion({ actual: true, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]) })
+      .then(data => { setUser(data); setSession(previous => previous?.expira === data.expira ? previous : { expira: data.expira }) })
+      .catch((failure) => {
+        if (controller.signal.aborted) return
+        if ([401, 403].includes(failure.status)) {
+          borrarSesionGuardada()
+          setSession(null)
+          setUser(null)
+        }
+        if (failure.status === 401) { setError(''); return }
+        setError(failure.message || 'No se pudo verificar la sesión. Comprueba la conexión.')
+      })
+    return () => controller.abort()
+  }, [session, retry])
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  useEffect(() => {
+    if (!session?.expira) return
+    const timer = setTimeout(() => {
+      borrarSesionGuardada()
+      setSession(null)
+      setUser(null)
+      setError('La sesión expiró. Ingresa nuevamente.')
+    }, Math.max(0, Date.parse(session.expira) - Date.now()))
+    return () => clearTimeout(timer)
+  }, [session])
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  async function iniciarSesion(event) {
+    event.preventDefault()
+    if (loading) return
+    const fields = new FormData(event.currentTarget)
+    setLoading(true)
+    setError('')
+    setErrorField(null)
+    try {
+      const data = await solicitarSesion({ rut: fields.get('rut'), clave: fields.get('clave'), recordar: fields.has('recordar') })
+      borrarSesionGuardada()
+      setSession({ expira: data.expira })
+      setUser(data)
+    } catch (failure) {
+      setErrorField(failure.field || null)
+      setError(failure.message || 'No se pudo iniciar sesión. Comprueba la conexión e inténtalo nuevamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return <EstructuraAplicacion usuario={user} alCerrarSesion={cerrarSesion}>
+    {user ? <PaginaInicio usuario={user} error={error} /> : <InicioSesion checking={Boolean(session && !user)} loading={loading} error={error} errorField={errorField} onClearError={() => { setError(''); setErrorField(null) }} onLogin={iniciarSesion} onLogout={cerrarSesion} onRetry={() => { setError(''); setRetry(retry + 1) }} />}
+  </EstructuraAplicacion>
 }
 
 export default App

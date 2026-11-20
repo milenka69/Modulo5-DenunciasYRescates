@@ -1,0 +1,13 @@
+.profile-menu { position: relative; }
+.profile-trigger { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--card); }
+.profile-avatar { position: relative; display: block; width: 28px; height: 28px; overflow: hidden; border-radius: 50%; background: #e5e7e8; }
+.profile-avatar::before { content: ''; position: absolute; width: 9px; height: 9px; top: 5px; left: 10px; border-radius: 50%; background: #92979a; }
+.profile-avatar span { position: absolute; width: 20px; height: 15px; top: 16px; left: 4px; border-radius: 50% 50% 0 0; background: #92979a; }
+.profile-dropdown { position: absolute; top: 100%; right: 0; width: 255px; padding: 10px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 16px 40px #0002; z-index: 10; }
+.profile-summary { display: grid; gap: 6px; padding: 10px 10px 15px; font-size: 12px; }
+.profile-summary span { color: var(--muted); font-size: 11px; }
+.profile-dropdown button { width: 100%; text-align: left; border: 0; border-radius: 7px; padding: 12px 10px; background: transparent; font-size: 12px; }
+.profile-dropdown button:disabled { cursor: default; color: var(--muted); opacity: .65; }
+.profile-dropdown .logout-button { color: #bc303b; border-top: 1px solid var(--border); border-radius: 0 0 7px 7px; margin-top: 6px; }
+.profile-dropdown .logout-button:hover { background: #bc303b12; }
+.dark .profile-dropdown .logout-button { color: #ff9198; }
