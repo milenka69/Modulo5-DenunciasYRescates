@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 function App() {
@@ -13,6 +12,39 @@ function App() {
 
   // Historial de intervenciones
   const [historial, setHistorial] = useState([]);
+
+  // Consultar historial desde MongoDB
+  useEffect(() => {
+    const cargarHistorial = async () => {
+      try {
+        const respuesta = await fetch(
+          'http://localhost:3000/api/intervenciones/DEN-001'
+        );
+
+        if (!respuesta.ok) {
+          throw new Error('No se pudo cargar el historial.');
+        }
+
+        const datos = await respuesta.json();
+
+        const registros = datos.map((intervencion) => ({
+          id: intervencion._id,
+          fecha: intervencion.fechaIntervencion.split('T')[0],
+          resultado: intervencion.resultado,
+          observaciones: intervencion.observaciones
+        }));
+
+        setHistorial(registros);
+
+      } catch (error) {
+        console.error('Error al cargar historial:', error);
+        setMensaje('No se pudo cargar el historial.');
+      }
+    };
+
+    cargarHistorial();
+  }, []);
+
 
   // Control del menú lateral
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -38,7 +70,9 @@ function App() {
   };
 
   // Guardar intervención
-  const guardarIntervencion = (event) => {
+
+  // Guardar intervención
+  const guardarIntervencion = async (event) => {
     event.preventDefault();
 
     if (estado !== 'en_terreno') {
@@ -51,21 +85,53 @@ function App() {
       return;
     }
 
-    const nuevaIntervencion = {
-      id: Date.now(),
-      fecha,
-      resultado,
-      observaciones
-    };
+    try {
+      const respuesta = await fetch(
+        'http://localhost:3000/api/intervenciones',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            denunciaId: 'DEN-001',
+            fechaIntervencion: fecha,
+            resultado: resultado,
+            observaciones: observaciones
+          })
+        }
+      );
 
-    setHistorial([nuevaIntervencion, ...historial]);
+      const datos = await respuesta.json();
 
-    setMensaje('La intervención se ha guardado correctamente.');
+      if (!respuesta.ok) {
+        throw new Error(datos.mensaje || 'No se pudo guardar la intervención.');
+      }
 
-    setFecha('');
-    setResultado('');
-    setObservaciones('');
+      const nuevaIntervencion = {
+        id: datos.intervencion._id,
+        fecha: fecha,
+        resultado: resultado,
+        observaciones: observaciones
+      };
+
+      setHistorial((historialAnterior) => [
+        nuevaIntervencion,
+        ...historialAnterior
+      ]);
+
+      setMensaje('La intervención se ha guardado correctamente.');
+
+      setFecha('');
+      setResultado('');
+      setObservaciones('');
+
+    } catch (error) {
+      console.error('Error:', error);
+      setMensaje(error.message || 'No se pudo conectar con el servidor.');
+    }
   };
+
 
   return (
     <>
