@@ -1,0 +1,11 @@
+.formulario-rescate { max-width: 560px; }
+.formulario-rescate label { display: block; margin-top: 1rem; font-weight: 600; }
+.formulario-rescate select,
+.formulario-rescate input { display: block; width: 100%; padding: 0.5rem; margin-top: 0.3rem; box-sizing: border-box; }
+.formulario-rescate [aria-invalid="true"] { border: 2px solid #c0392b; }
+.formulario-rescate .ayuda { display: block; margin-top: 0.25rem; font-weight: 400; font-size: 0.85rem; opacity: 0.75; }
+.formulario-rescate .error-campo { display: block; margin-top: 0.25rem; font-weight: 400; font-size: 0.85rem; color: #c0392b; }
+.formulario-rescate .resumen { margin-top: 0.75rem; padding: 0.6rem 0.8rem; border-radius: 6px; background: rgba(127, 127, 127, 0.12); font-size: 0.9rem; }
+.formulario-rescate .aviso { margin-top: 1rem; font-size: 0.9rem; }
+.formulario-rescate button[type="submit"] { margin-top: 1.5rem; width: 100%; padding: 0.6rem; cursor: pointer; }
+.formulario-rescate button[type="submit"]:disabled { cursor: not-allowed; }
