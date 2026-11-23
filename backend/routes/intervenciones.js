@@ -1,59 +1,121 @@
 
 import express from 'express';
 import Intervencion from '../models/intervencion.js';
-import validarToken from '../middleware/validarToken.js';
 
 const router = express.Router();
+
+const resultadosPermitidos = [
+  'Rescatado',
+  'No encontrado',
+  'Fallecido',
+  'Derivado a veterinario'
+];
 
 // Consultar historial de una denuncia
 router.get('/:denunciaId', async (req, res) => {
   try {
+    const { denunciaId } = req.params;
+
+    if (!denunciaId || !denunciaId.trim()) {
+      return res.status(400).json({
+        mensaje: 'Debes indicar el identificador de la denuncia.'
+      });
+    }
+
     const intervenciones = await Intervencion
-      .find({ denunciaId: req.params.denunciaId })
+      .find({ denunciaId: denunciaId.trim() })
       .sort({ fechaIntervencion: -1 });
 
-    res.status(200).json(intervenciones);
+    return res.status(200).json({
+      mensaje: 'Historial consultado correctamente.',
+      total: intervenciones.length,
+      intervenciones
+    });
 
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al consultar las intervenciones',
-      error: error.message
+    console.error('Error al consultar intervenciones:', error);
+
+    return res.status(500).json({
+      mensaje: 'Ocurrió un error al consultar el historial.'
     });
   }
 });
 
 // Registrar una intervención
-router.post('/', validarToken, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { denunciaId, fechaIntervencion, resultado, observaciones } = req.body;
+    const {
+      denunciaId,
+      fechaIntervencion,
+      resultado,
+      observaciones
+    } = req.body;
 
     // Validar campos obligatorios
-    if (!denunciaId || !fechaIntervencion || !resultado) {
+    if (
+      typeof denunciaId !== 'string' ||
+      !denunciaId.trim() ||
+      !fechaIntervencion ||
+      !resultado
+    ) {
       return res.status(400).json({
-        mensaje: 'Debes completar los campos obligatorios'
+        mensaje: 'Debes completar los campos obligatorios.'
+      });
+    }
+
+    // Validar fecha
+    const fecha = new Date(fechaIntervencion);
+
+    if (Number.isNaN(fecha.getTime())) {
+      return res.status(400).json({
+        mensaje: 'La fecha de intervención no es válida.'
+      });
+    }
+
+    // Validar resultado
+    if (!resultadosPermitidos.includes(resultado)) {
+      return res.status(400).json({
+        mensaje: 'El resultado seleccionado no es válido.',
+        resultadosPermitidos
+      });
+    }
+
+    // Validar observaciones
+    if (
+      observaciones !== undefined &&
+      typeof observaciones !== 'string'
+    ) {
+      return res.status(400).json({
+        mensaje: 'Las observaciones deben ser texto.'
       });
     }
 
     // Crear intervención
     const nuevaIntervencion = new Intervencion({
-      denunciaId,
-      fechaIntervencion,
+      denunciaId: denunciaId.trim(),
+      fechaIntervencion: fecha,
       resultado,
-      observaciones
+      observaciones: observaciones?.trim() || ''
     });
 
-    // Guardar en MongoDB
     await nuevaIntervencion.save();
 
-    res.status(201).json({
-      mensaje: 'Intervención registrada correctamente',
+    return res.status(201).json({
+      mensaje: 'Intervención registrada correctamente.',
       intervencion: nuevaIntervencion
     });
 
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al registrar la intervención',
-      error: error.message
+    console.error('Error al registrar intervención:', error);
+
+    if (error.name === 'ValidationError' || error.name === 'CastError') {
+      return res.status(400).json({
+        mensaje: 'Los datos enviados no son válidos.'
+      });
+    }
+
+    return res.status(500).json({
+      mensaje: 'Ocurrió un error al registrar la intervención.'
     });
   }
 });
