@@ -1,7 +1,8 @@
 import express from 'express';
-import { registrarDenuncia } from '../controllers/denunciaController.js';
+import { registrarDenuncia, obtenerDenuncias } from '../controllers/denunciaController.js';
 
 const router = express.Router();
+router.get('/', obtenerDenuncias);
 router.post('/', registrarDenuncia);
 
 export default router;
