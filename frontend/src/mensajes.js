@@ -9,7 +9,13 @@ const TEXTOS_DE_ERROR = {
   equipo_no_encontrado: "El equipo seleccionado no existe.",
 };
 
-// Convierte el error lanzado por asignarEquipo() en un texto para mostrar.
+// Errores de la sesión del núcleo: se muestran igual sin importar la operación.
+const TEXTOS_POR_STATUS = {
+  401: "Tu sesión expiró. Ingresa nuevamente.",
+  403: "No tienes permisos para realizar esta acción.",
+};
+
+// Convierte el error lanzado por la API en un texto para mostrar.
 export function mensajeDeError(error) {
   // Sin status: la petición ni siquiera llegó al servidor (API apagada, sin red, etc.)
   if (!error || error.status === undefined) {
@@ -17,9 +23,10 @@ export function mensajeDeError(error) {
   }
   // Un texto conocido del contrato; si no, el mensaje que envió la API; si no, uno genérico.
   return (
+    TEXTOS_POR_STATUS[error.status] ||
     TEXTOS_DE_ERROR[error.codigo] ||
     error.message ||
-    `No se pudo asignar el equipo (error ${error.status}).`
+    `No se pudo completar la operación (error ${error.status}).`
   );
 }
 

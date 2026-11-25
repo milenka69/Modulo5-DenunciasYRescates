@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { asignarEquipo } from "./api/rescates";
+import { ErrorApi, asignarEquipo } from "./api/rescates";
 import Mensaje from "./components/Mensaje";
 import { ESTADOS_ASIGNABLES, LONGITUD_LUGAR, armarSolicitud, validarFormulario } from "./formulario";
 import "./FormularioRescate.css";
@@ -8,8 +8,8 @@ import { mensajeDeConfirmacion, mensajeDeError } from "./mensajes";
 const VACIO = { denunciaId: "", equipoId: "", lugar: "", animalId: "" };
 
 async function pedirJson(url) {
-  const respuesta = await fetch(url);
-  if (!respuesta.ok) throw new Error(`Error ${respuesta.status}`);
+  const respuesta = await fetch(url, { credentials: "include" }); // la sesión va en una cookie
+  if (!respuesta.ok) throw new ErrorApi(undefined, { status: respuesta.status });
   return respuesta.json();
 }
 
@@ -35,7 +35,7 @@ export default function FormularioRescate() {
 
   useEffect(() => {
     cargar()
-      .catch(() => setMensaje({ tipo: "error", texto: mensajeDeError(new TypeError("sin conexión")) }))
+      .catch((error) => setMensaje({ tipo: "error", texto: mensajeDeError(error) }))
       .finally(() => setCargando(false));
   }, [cargar]);
 

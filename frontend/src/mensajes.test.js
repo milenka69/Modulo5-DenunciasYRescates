@@ -50,6 +50,17 @@ test("error sin status se interpreta como falta de conexión", () => {
 test("error del servidor sin mensaje usa un texto genérico con el status", () => {
   assert.equal(
     mensajeDeError({ status: 500 }),
-    "No se pudo asignar el equipo (error 500)."
+    "No se pudo completar la operación (error 500)."
+  );
+});
+
+test("sesión expirada (401)", () => {
+  assert.equal(mensajeDeError({ status: 401 }), "Tu sesión expiró. Ingresa nuevamente.");
+});
+
+test("sin permisos (403)", () => {
+  assert.equal(
+    mensajeDeError({ status: 403, codigo: "otro" }),
+    "No tienes permisos para realizar esta acción."
   );
 });

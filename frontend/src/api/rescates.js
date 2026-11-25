@@ -14,6 +14,7 @@ export class ErrorApi extends Error {
 export async function asignarEquipo(denunciaId, { equipo_id, lugar, animal_id }) {
   const respuesta = await fetch(`/api/denuncias/${denunciaId}/rescates`, {
     method: "POST",
+    credentials: "include", // la sesión de main va en una cookie
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ equipo_id, lugar, animal_id }),
   });
