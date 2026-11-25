@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import './PaginaInicio.css'
+import RegistroDenuncia from './RegistroDenuncia.jsx'
 
 export default function PaginaInicio({ usuario, error }) {
   const esFuncionario = usuario.perfil === 'funcionario'
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
 
   return (
     <main id="inicio" className="pagina-inicio" tabIndex={-1}>
@@ -15,14 +18,25 @@ export default function PaginaInicio({ usuario, error }) {
           <span className="inicio-perfil">{esFuncionario ? 'Funcionario' : usuario.perfil === 'comunitario' ? 'Comunitario' : 'Vecino'}</span>
         </div>
         <div className="inicio-accion">
-          {/* Conectar aquí el futuro formulario, en un componente RegistrarDenuncia. */}
-          <button type="button" className="inicio-boton" disabled aria-describedby="registro-proximo">
-            <span aria-hidden="true">＋</span> Registrar denuncia
+          <button
+            type="button"
+            className="inicio-boton"
+            onClick={() => setMostrarFormulario(!mostrarFormulario)}
+          >
+            <span aria-hidden="true">{mostrarFormulario ? '✕' : '＋'}</span>{' '}
+            {mostrarFormulario ? 'Cerrar formulario' : 'Registrar denuncia'}
           </button>
-          <span id="registro-proximo">Próximamente disponible</span>
         </div>
       </section>
+
       {error && <p className="inicio-error" role="alert">{error}</p>}
+
+      {mostrarFormulario && (
+        <section className="inicio-formulario" aria-label="Formulario de registro de denuncia">
+          <RegistroDenuncia />
+        </section>
+      )}
+
       <section className="inicio-contenido" aria-labelledby="titulo-actividad">
         <div className="inicio-seccion-titulo">
           <h2 id="titulo-actividad">{esFuncionario ? 'Panel de gestión' : 'Mis solicitudes'}</h2>

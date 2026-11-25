@@ -25,9 +25,10 @@ const RegistroDenuncia = () => {
 
         try {
             // Conecta con tu backend
-            const respuesta = await fetch('http://localhost:3000/api/denuncias', {
+            const respuesta = await fetch('http://localhost:4000/api/denuncias', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify(formData)
             });
             
