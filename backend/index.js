@@ -2,7 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import intervencionesRoutes from './routes/intervenciones.js';
+import rescatesRoutes from './routes/rescates.js';
 
 const app = express();
 const PORT = 3000;
@@ -20,7 +20,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/tenencia_rescates')
 app.use(cors());
 app.use(express.json());
 
-app.use('/api/intervenciones', intervencionesRoutes);
+app.use('/api/rescates', rescatesRoutes);
 
 // Ruta principal
 app.get('/', (req, res) => {

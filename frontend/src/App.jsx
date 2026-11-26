@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
 
 function App() {
@@ -12,39 +12,6 @@ function App() {
 
   // Historial de intervenciones
   const [historial, setHistorial] = useState([]);
-
-  // Consultar historial desde MongoDB
-  useEffect(() => {
-    const cargarHistorial = async () => {
-      try {
-        const respuesta = await fetch(
-          'http://localhost:3000/api/intervenciones/DEN-001'
-        );
-
-        if (!respuesta.ok) {
-          throw new Error('No se pudo cargar el historial.');
-        }
-
-        const datos = await respuesta.json();
-
-        const registros = datos.map((intervencion) => ({
-          id: intervencion._id,
-          fecha: intervencion.fechaIntervencion.split('T')[0],
-          resultado: intervencion.resultado,
-          observaciones: intervencion.observaciones
-        }));
-
-        setHistorial(registros);
-
-      } catch (error) {
-        console.error('Error al cargar historial:', error);
-        setMensaje('No se pudo cargar el historial.');
-      }
-    };
-
-    cargarHistorial();
-  }, []);
-
 
   // Control del menú lateral
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -64,9 +31,31 @@ function App() {
 };
 
   // Iniciar intervención
-  const iniciarIntervencion = () => {
-    setEstado('en_terreno');
-    setMensaje('La intervención ha comenzado correctamente.');
+  const iniciarIntervencion = async () => {
+    try {
+      const respuesta = await fetch(
+        'http://localhost:3000/api/rescates/DEN-001/estado',
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ estado: 'en_terreno' })
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        throw new Error(datos.mensaje || 'No se pudo iniciar la intervención.');
+      }
+
+      setEstado('en_terreno');
+      setMensaje('La intervención ha comenzado correctamente.');
+    } catch (error) {
+      console.error('Error:', error);
+      setMensaje(error.message || 'No se pudo conectar con el servidor.');
+    }
   };
 
   // Guardar intervención
@@ -87,14 +76,14 @@ function App() {
 
     try {
       const respuesta = await fetch(
-        'http://localhost:3000/api/intervenciones',
+        'http://localhost:3000/api/rescates/DEN-001/estado',
         {
-          method: 'POST',
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            denunciaId: 'DEN-001',
+            estado: 'en_terreno',
             fechaIntervencion: fecha,
             resultado: resultado,
             observaciones: observaciones
