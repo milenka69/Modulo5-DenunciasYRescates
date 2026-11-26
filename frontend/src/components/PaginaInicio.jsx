@@ -15,7 +15,7 @@ export default function PaginaInicio({ usuario, error }) {
       const lista = Array.isArray(datos) ? datos : (datos.data || [])
       setDenuncias(lista)
     } catch {
-      // Si falla la carga inicial, mantiene el estado vacío sin romper la vista
+      // Mantiene el estado actual si ocurre un error de red
     }
   }, [])
 
@@ -26,6 +26,10 @@ export default function PaginaInicio({ usuario, error }) {
   const manejarDenunciaCreada = () => {
     cargarDenuncias()
   }
+
+  const denunciasVisibles = esFuncionario
+    ? denuncias
+    : denuncias.filter((d) => !d.denuncianteId || d.denuncianteId === usuario.rut || d.denuncianteId === usuario.nombre)
 
   return (
     <main id="inicio" className="pagina-inicio" tabIndex={-1}>
@@ -38,21 +42,24 @@ export default function PaginaInicio({ usuario, error }) {
             : 'Ayudar comienza contigo. Desde aquí podrás informar situaciones y acompañar tus solicitudes.'}</p>
           <span className="inicio-perfil">{esFuncionario ? 'Funcionario' : usuario.perfil === 'comunitario' ? 'Comunitario' : 'Vecino'}</span>
         </div>
-        <div className="inicio-accion">
-          <button
-            type="button"
-            className="inicio-boton"
-            onClick={() => setMostrarFormulario(!mostrarFormulario)}
-          >
-            <span aria-hidden="true">{mostrarFormulario ? '✕' : '＋'}</span>{' '}
-            {mostrarFormulario ? 'Cerrar formulario' : 'Registrar denuncia'}
-          </button>
-        </div>
+
+        {!esFuncionario && (
+          <div className="inicio-accion">
+            <button
+              type="button"
+              className="inicio-boton"
+              onClick={() => setMostrarFormulario(!mostrarFormulario)}
+            >
+              <span aria-hidden="true">{mostrarFormulario ? '✕' : '＋'}</span>{' '}
+              {mostrarFormulario ? 'Cerrar formulario' : 'Registrar denuncia'}
+            </button>
+          </div>
+        )}
       </section>
 
       {error && <p className="inicio-error" role="alert">{error}</p>}
 
-      {mostrarFormulario && (
+      {!esFuncionario && mostrarFormulario && (
         <section className="inicio-formulario" aria-label="Formulario de registro de denuncia">
           <RegistroDenuncia usuario={usuario} onDenunciaCreada={manejarDenunciaCreada} />
         </section>
@@ -61,12 +68,12 @@ export default function PaginaInicio({ usuario, error }) {
       <section className="inicio-contenido" aria-labelledby="titulo-actividad">
         <div className="inicio-seccion-titulo">
           <h2 id="titulo-actividad">{esFuncionario ? 'Panel de gestión' : 'Mis solicitudes'}</h2>
-          <span>Denuncias y rescates ({denuncias.length})</span>
+          <span>Denuncias y rescates ({denunciasVisibles.length})</span>
         </div>
 
-        {denuncias.length > 0 ? (
+        {denunciasVisibles.length > 0 ? (
           <div style={{ display: 'grid', gap: '0.85rem', marginTop: '1rem' }}>
-            {denuncias.map((d) => (
+            {denunciasVisibles.map((d) => (
               <article
                 key={d.id || d._id}
                 style={{ padding: '1rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}

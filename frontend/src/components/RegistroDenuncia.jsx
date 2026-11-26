@@ -9,12 +9,19 @@ export default function RegistroDenuncia({ usuario, onDenunciaCreada }) {
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
 
+  if (usuario?.perfil === 'funcionario') {
+    return (
+      <div role="alert" style={{ maxWidth: '480px', margin: '0 auto', padding: '1rem', borderRadius: '8px', background: '#fee2e2', color: '#991b1b', textAlign: 'center' }}>
+        Los perfiles de funcionario no están autorizados para registrar denuncias.
+      </div>
+    );
+  }
+
   const manejarEnvio = async (e) => {
     e.preventDefault();
     setMensaje('');
     setError('');
 
-    // #58 Validación de campos obligatorios
     if (!titulo.trim() || !tipoAnimal.trim() || !ubicacion.trim() || !descripcion.trim()) {
       setError('Por favor completa todos los campos obligatorios antes de guardar.');
       return;
@@ -38,7 +45,11 @@ export default function RegistroDenuncia({ usuario, onDenunciaCreada }) {
       const datos = await respuesta.json();
 
       if (!respuesta.ok) {
-        setError(datos.error || 'No se pudo registrar la denuncia.');
+        const mensajeError =
+          typeof datos.error === 'string'
+            ? datos.error
+            : datos.error?.mensaje || 'No se pudo registrar la denuncia.';
+        setError(mensajeError);
         return;
       }
 
@@ -47,7 +58,6 @@ export default function RegistroDenuncia({ usuario, onDenunciaCreada }) {
         ? new Date(d.fechaRegistro).toLocaleString('es-CL')
         : new Date().toLocaleString('es-CL');
 
-      // #60 Mostrar resultado del registro con ID, fecha/hora y estado inicial
       setMensaje(
         `¡Éxito! Denuncia #${d.id} registrada el ${fechaFormateada}. Estado inicial: ${d.estado}.`
       );

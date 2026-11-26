@@ -7,16 +7,25 @@ const TIPOS_VALIDOS = ['Perro', 'Gato', 'Otro'];
 
 export const registrarDenuncia = async (req, res) => {
     try {
+        if (req.usuario?.perfil === 'funcionario') {
+            return res.status(403).json({
+                error: {
+                    codigo: 'PERFIL_NO_AUTORIZADO',
+                    mensaje: 'Los funcionarios no están autorizados para registrar denuncias.'
+                }
+            });
+        }
+
         const titulo = typeof req.body?.titulo === 'string' ? req.body.titulo.trim() : '';
         const tipoAnimal = typeof req.body?.tipoAnimal === 'string' ? req.body.tipoAnimal.trim() : '';
         const ubicacion = typeof req.body?.ubicacion === 'string' ? req.body.ubicacion.trim() : '';
         const descripcion = typeof req.body?.descripcion === 'string' ? req.body.descripcion.trim() : '';
         const denuncianteId =
-            typeof req.body?.denuncianteId === 'string' && req.body.denuncianteId.trim()
+            req.usuario?.rut ||
+            (typeof req.body?.denuncianteId === 'string' && req.body.denuncianteId.trim()
                 ? req.body.denuncianteId.trim()
-                : 'usuario_sesion';
+                : 'usuario_sesion');
 
-        // #58 Validar campos obligatorios
         if (!titulo || !tipoAnimal || !ubicacion || !descripcion) {
             return res.status(400).json({ error: 'Todos los campos obligatorios deben completarse.' });
         }
@@ -27,7 +36,6 @@ export const registrarDenuncia = async (req, res) => {
 
         const ahora = new Date();
 
-        // Si MongoDB está conectado, guarda en base de datos
         if (mongoose.connection.readyState === 1) {
             const ultima = await Denuncia.findOne().sort({ id: -1 }).lean();
             const nuevoId = (ultima?.id || 0) + 1;
@@ -50,7 +58,6 @@ export const registrarDenuncia = async (req, res) => {
             });
         }
 
-        // Respaldo en memoria si .env no tiene MONGODB_URI
         const denunciaTemporal = {
             id: contadorMemoriaId++,
             titulo,
