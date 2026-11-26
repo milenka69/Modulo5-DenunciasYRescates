@@ -53,7 +53,7 @@
       "responsable": "milenka69", 
       "verificacion": { 
         "metodo": "GET", 
-        "ruta": "/api/intervenciones/:denunciaId", 
+        "ruta": "/api/rescates/{id}/estado", 
         "perfil": "Funcionario", 
         "esperado": 200 
         }
