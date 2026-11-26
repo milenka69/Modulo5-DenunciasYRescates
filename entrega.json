@@ -1,0 +1,68 @@
+{ 
+  "seccion": "IEI-C2", 
+  "modulo": 5, 
+  "grupo": "G04", 
+  "prototipo": "https://modulo5-denunciasyrescates.onrender.com", 
+  "repositorio": "https://github.com/milenka69/Modulo5-DenunciasYRescates", 
+  "taiga": "https://tree.taiga.io/project/destrozadordemamayemas12-ti3043-d-iei-n4-p2-c2-m5/taskboard/sprint-3-12811", 
+  "integrantes": [ 
+    { "nombre": "Milenka Castillo", "github": "milenka69", "taiga": "mile", "rol": "Scrum Master" },
+    { "nombre": "Nicolás Pérez", "github": "kirkinator67Jeff", "taiga": "Nicolás Pérez", "rol": "Arquitecto" },
+    { "nombre": "Sebastián Santander", "github": "SebastianSV69", "taiga": "Sebastian Santander", "rol": "Calidad" },
+    { "nombre": "Makarena Jélvez", "github": "Makarenaj", "taiga": "Makarena Del Carmen Jelvez Maldonado", "rol": "Analista" },
+    { "nombre": "Bryan Jimenéz", "github": "BryanInacap", "taiga": "bryan jimenez rivera", "rol": "Diseño" }  
+], 
+  "historias": [ 
+    { 
+      "id": "HU-01", 
+      "titulo": "Registrar denuncia", 
+      "responsable": "Makarenaj", 
+      "verificacion": { 
+        "metodo": "POST", 
+        "ruta": "/api/denuncias", 
+        "perfil": "vecino", 
+        "cuerpo": { "descripcion": "Denuncia de maltrato animal" }, 
+        "esperado": 201 
+        }
+    },
+    { 
+      "id": "HU-03", 
+      "titulo": "Consultar denuncias", 
+      "responsable": "BryanInacap", 
+      "verificacion": { 
+        "metodo": "GET", 
+        "ruta": "/api/denuncias", 
+        "perfil": "vecino", 
+        "esperado": 200 
+        }
+    },
+    { 
+      "id": "HU-05", 
+      "titulo": "Asignar equipo de rescate", 
+      "responsable": "kirkinator67Jeff", 
+      "verificacion": { 
+        "metodo": "POST", 
+        "ruta": "/api/denuncias/{id}/rescates", 
+        "perfil": "Funcionario", 
+        "esperado": 201 
+        }
+    },
+    { 
+      "id": "HU-06", 
+      "titulo": "Registrar resultado del rescate", 
+      "responsable": "milenka69", 
+      "verificacion": { 
+        "metodo": "GET", 
+        "ruta": "/api/intervenciones/:denunciaId", 
+        "perfil": "Funcionario", 
+        "esperado": 200 
+        }
+    },
+    { 
+      "id": "HU-08", 
+      "titulo": "Vincular con registro", 
+      "responsable": "SebastianSV69", 
+      "verificacion": {}
+    }
+  ]
+}
