@@ -3,9 +3,15 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
+import { fileURLToPath } from 'node:url'
+import { routerRescates } from './rescates/router.js'
+import { rescatesEnMemoria, denunciasEnMemoria } from './rescates/memoria.js'
+import { rescatesEnMongo, prepararMongo } from './rescates/mongo.js'
+import { denunciasDesdeMongo } from './rescates/denunciasMongo.js'
+import { animalesDesdeNucleo } from './rescates/nucleoAnimales.js'
 
 dotenv.config()
-const app = express()
+export const app = express()
 const port = process.env.PORT || 4000
 const nucleoUrl = (process.env.NUCLEO_URL || 'https://nucleo-tr.onrender.com').replace(/\/$/, '')
 app.disable('x-powered-by')
@@ -30,13 +36,18 @@ setInterval(() => {
   for (const [k,v] of sessions) if (v.expires <= Date.now()) sessions.delete(k)
   for (const [k,v] of attempts) if (v.reset <= Date.now()) attempts.delete(k)
 }, 60000).unref()
+// Anti-CSRF: toda petición que modifica datos debe venir del frontend (Origin) con la cabecera propia.
+function verificarOrigen(req,res,next) {
+  if (req.headers.origin !== origin || req.headers['x-requested-with'] !== 'Modulo5') return fail(res,403,'ORIGEN_INVALIDO','Petición no autorizada.')
+  next()
+}
 app.use('/api/auth', (req,res,next) => {
   res.set('Cache-Control','no-store'); res.set('X-Content-Type-Options','nosniff')
   if (production) {
     res.set('Strict-Transport-Security','max-age=31536000')
     if (!req.secure) return fail(res,400,'HTTPS_REQUERIDO','Se requiere HTTPS.')
   }
-  if (!['GET','HEAD'].includes(req.method) && (req.headers.origin !== origin || req.headers['x-requested-with'] !== 'Modulo5')) return fail(res,403,'ORIGEN_INVALIDO','Petición no autorizada.')
+  if (!['GET','HEAD'].includes(req.method)) return verificarOrigen(req,res,next)
   next()
 })
 async function nucleus(method,token,body) {
@@ -84,14 +95,21 @@ export function requiereSesion(...perfiles) {
         return fail(res,response.status === 401 ? 401 : 503,'SESION_INVALIDA','No se pudo validar la sesión.')
       }
       if (!perfiles.includes(data.perfil)) return fail(res,403,'PERFIL_NO_AUTORIZADO','Perfil no autorizado.')
-      req.usuario = data; req.expira = new Date(session.expires).toISOString(); next()
+      req.usuario = data; req.tokenNucleo = session.token; req.expira = new Date(session.expires).toISOString(); next()
     } catch { fail(res,503,'NUCLEO_NO_DISPONIBLE','No se pudo validar la sesión.') }
   }
 }
 app.get('/api/auth/sesiones/actual',requiereSesion('vecino','comunitario','funcionario'),(req,res) => res.json({rut:req.usuario.rut,nombre:req.usuario.nombre,perfil:req.usuario.perfil,expira:req.expira}))
 app.delete('/api/auth/sesiones/actual',(req,res) => { sessions.delete(idOf(req)); cookie(res,'',0); res.status(204).end() })
 
-// Colocar API de denuncias y rescates aquí al tener el contrato listo.
+// HU-05: equipos y asignación de rescates (solo funcionario). Los repositorios se pueden reemplazar en pruebas.
+export const repos = {
+  rescates: process.env.MONGODB_URI ? rescatesEnMongo() : rescatesEnMemoria(),
+  denuncias: process.env.MONGODB_URI ? denunciasDesdeMongo : denunciasEnMemoria([]),
+  animales: animalesDesdeNucleo(nucleoUrl, process.env.NUCLEO_ANIMALES_PATH || undefined),
+}
+if (production && !process.env.MONGODB_URI) throw new Error('Producción requiere MONGODB_URI (los rescates no pueden vivir en memoria)')
+app.use('/api', routerRescates({ proteger: requiereSesion, origen: verificarOrigen, repos }))
 app.use((req, res) => res.status(404).json({ error: { codigo: 'RUTA_NO_ENCONTRADA', mensaje: 'La ruta solicitada no existe.' } }))
 app.use((err, req, res, next) => {
   const status = err.status === 400 ? 400 : 500
@@ -101,11 +119,12 @@ app.use((err, req, res, next) => {
 async function iniciar() {
   if (process.env.MONGODB_URI) {
     await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
+    await prepararMongo()
     console.log('MongoDB conectado')
   }
   app.listen(port, () => console.log(`API del módulo 5 en http://localhost:${port}`))
 }
-iniciar().catch(() => {
+if (process.argv[1] === fileURLToPath(import.meta.url)) iniciar().catch(() => {
   console.error('No se pudo iniciar la API. Revisa MONGODB_URI y la disponibilidad de MongoDB.')
   process.exitCode = 1
 })
