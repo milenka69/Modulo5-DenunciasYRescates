@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
+import denunciasRouter from './routes/denuncias.js'
 
 dotenv.config()
 const app = express()
@@ -15,7 +16,6 @@ app.use(express.json({ limit: '10kb' }))
 app.get('/api/denuncias/salud', (req, res) => {
   res.json({ estado: 'activo', modulo: 'Denuncias y Rescate', mongodb: mongoose.connection.readyState === 1 ? 'conectado' : 'sin conexión' })
 })
-
 
 const production = process.env.NODE_ENV === 'production'
 const origin = process.env.FRONTEND_URL || 'http://localhost:5173'
@@ -92,6 +92,7 @@ app.get('/api/auth/sesiones/actual',requiereSesion('vecino','comunitario','funci
 app.delete('/api/auth/sesiones/actual',(req,res) => { sessions.delete(idOf(req)); cookie(res,'',0); res.status(204).end() })
 
 // Colocar API de denuncias y rescates aquí al tener el contrato listo.
+app.use('/api/denuncias', denunciasRouter)
 app.use((req, res) => res.status(404).json({ error: { codigo: 'RUTA_NO_ENCONTRADA', mensaje: 'La ruta solicitada no existe.' } }))
 app.use((err, req, res, next) => {
   const status = err.status === 400 ? 400 : 500
